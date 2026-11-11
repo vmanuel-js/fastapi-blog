@@ -1,7 +1,12 @@
-from fastapi import FastAPI
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 posts: list[dict] = [
     {
@@ -26,36 +31,44 @@ fruits: list[dict] = [
         "name": "Apple",
         "color": "Red",
         "taste": "Sweet",
-        "description": "A sweet red fruit."
+        "description": "A sweet red fruit.",
     },
     {
         "id": 2,
         "name": "Banana",
         "color": "Yellow",
         "taste": "Sweet",
-        "description": "A sweet yellow fruit."
+        "description": "A sweet yellow fruit.",
     },
     {
         "id": 3,
         "name": "Orange",
         "color": "Orange",
         "taste": "Citrus",
-        "description": "A citrus orange fruit."
-    }
+        "description": "A citrus orange fruit.",
+    },
 ]
 
-@app.get("/", response_class=HTMLResponse, include_in_schema=False)
-@app.get("/posts", response_class=HTMLResponse, include_in_schema=False)
-def home():
-    return f"<ul><li>{posts[0]["title"]}</li><li>{posts[1]["title"]}</li></ul>"
 
-@app.get("/fruits", response_class=HTMLResponse, include_in_schema=False)
+@app.get("/", include_in_schema=False, name="home")
+@app.get("/posts", include_in_schema=False, name="posts")
+def home(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "home.html",
+        {"posts": posts, "title": "Home"},
+    )
+
+
+@app.get("/fruits", include_in_schema=False)
 def fruits_page():
-    return f"<ul><li>{fruits[0]["name"]}</li><li>{fruits[1]["name"]}</li><li>{fruits[2]["name"]}</li></ul>"
+    return f"<ul><li>{fruits[0]['name']}</li><li>{fruits[1]['name']}</li><li>{fruits[2]['name']}</li></ul>"
+
 
 @app.get("/api/posts")
 def get_posts():
     return posts
+
 
 @app.get("/api/fruits")
 def get_fruits():
